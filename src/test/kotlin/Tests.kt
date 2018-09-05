@@ -372,12 +372,14 @@ class Tests {
 
     @Test
     fun adElementBuilder_AdListConsistent() {
-        val innerAdElement = AdElementBuilder().id("id_inner").delay(300).successful(true).build()
+        val firstAdElement = AdElementBuilder().id("id_first").delay(300).successful(true).build()
+        val secondAdElement = AdElementBuilder().id("id_second").delay(300).successful(true).build()
         val adElement = AdElementBuilder()
                 .id("id")
                 .surveyType(SurveyType.CONSISTENTLY)
                 .tmax(2000)
-                .addAdElement(innerAdElement)
+                .addAdElement(firstAdElement)
+                .addAdElement(secondAdElement)
                 .stopGroupIfLoaded()
                 .build()
 
@@ -386,19 +388,22 @@ class Tests {
         assertEquals(SurveyType.CONSISTENTLY, adElement.surveyType)
         assertEquals("id", adElement.id)
         assertEquals(2000, adElement.tmax)
-        assertEquals(1, adElement.adElements.size)
-        assertEquals(innerAdElement, adElement.adElements[0])
+        assertEquals(2, adElement.adElements.size)
+        assertEquals(firstAdElement, adElement.adElements[0])
+        assertEquals(secondAdElement, adElement.adElements[1])
         assertTrue(adElement.stopGroupIfLoaded)
     }
 
     @Test
     fun adElementBuilder_AdListConcurrent() {
-        val innerAdElement = AdElementBuilder().id("id_inner").delay(300).successful(true).build()
+        val firstAdElement = AdElementBuilder().id("id_first").delay(300).successful(true).build()
+        val secondAdElement = AdElementBuilder().id("id_second").delay(300).successful(true).build()
         val adElement = AdElementBuilder()
                 .id("id")
                 .surveyType(SurveyType.CONCURRENTLY)
                 .tmax(2000)
-                .addAdElement(innerAdElement)
+                .addAdElement(firstAdElement)
+                .addAdElement(secondAdElement)
                 .stopGroupIfLoaded()
                 .build()
 
@@ -407,8 +412,9 @@ class Tests {
         assertEquals(SurveyType.CONCURRENTLY, adElement.surveyType)
         assertEquals("id", adElement.id)
         assertEquals(2000, adElement.tmax)
-        assertEquals(1, adElement.adElements.size)
-        assertEquals(innerAdElement, adElement.adElements[0])
+        assertEquals(2, adElement.adElements.size)
+        assertEquals(firstAdElement, adElement.adElements[0])
+        assertEquals(secondAdElement, adElement.adElements[1])
         assertTrue(adElement.stopGroupIfLoaded)
     }
 }

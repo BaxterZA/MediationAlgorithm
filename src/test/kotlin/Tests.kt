@@ -50,10 +50,10 @@ class Tests {
     }
 
     @Test
-    fun adList_onComplete_withLoaded() {
+    fun adListConsistent_onComplete_withLoaded() {
 
         val innerAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
-        val adElement: AdElement = AdElementBuilder().addAdElement(innerAdElement).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(innerAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
@@ -65,10 +65,25 @@ class Tests {
     }
 
     @Test
-    fun adList_onComplete_withFailed() {
+    fun adListConcurrent_onComplete_withLoaded() {
+
+        val innerAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(innerAdElement).surveyType(SurveyType.CONCURRENTLY).tmax(2000).build()
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertEquals(listOf(innerAdElement), loaded)
+                    assertTrue(failed.isEmpty())
+                }
+            })
+        }
+    }
+
+    @Test
+    fun adListConsistent_onComplete_withFailed() {
 
         val innerAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
-        val adElement: AdElement = AdElementBuilder().addAdElement(innerAdElement).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(innerAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
@@ -80,11 +95,26 @@ class Tests {
     }
 
     @Test
-    fun adList_onComplete_withTwoLoaded() {
+    fun adListConcurrent_onComplete_withFailed() {
+
+        val innerAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(innerAdElement).surveyType(SurveyType.CONCURRENTLY).tmax(2000).build()
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertTrue(loaded.isEmpty())
+                    assertEquals(listOf(innerAdElement), failed)
+                }
+            })
+        }
+    }
+
+    @Test
+    fun adListConsistent_onComplete_withTwoLoaded() {
 
         val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
         val secondAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
-        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
@@ -96,11 +126,27 @@ class Tests {
     }
 
     @Test
-    fun adList_onComplete_withTwoFailed() {
+    fun adListConcurrent_onComplete_withTwoLoaded() {
+
+        val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
+        val secondAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).surveyType(SurveyType.CONCURRENTLY).tmax(2000).build()
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertEquals(listOf(firstAdElement, secondAdElement), loaded)
+                    assertTrue(failed.isEmpty())
+                }
+            })
+        }
+    }
+
+    @Test
+    fun adListConsistent_onComplete_withTwoFailed() {
 
         val firstAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
         val secondAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
-        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
@@ -112,11 +158,27 @@ class Tests {
     }
 
     @Test
-    fun adList_onComplete_oneLoadedOneFailed() {
+    fun adListConcurrent_onComplete_withTwoFailed() {
+
+        val firstAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
+        val secondAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).surveyType(SurveyType.CONCURRENTLY).tmax(2000).build()
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertEquals(listOf(firstAdElement, secondAdElement), failed)
+                    assertTrue(loaded.isEmpty())
+                }
+            })
+        }
+    }
+
+    @Test
+    fun adListConsistent_onComplete_oneLoadedOneFailed() {
 
         val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
         val secondAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
-        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
@@ -128,11 +190,11 @@ class Tests {
     }
 
     @Test
-    fun adList_onComplete_oneLoadedOneFailedByTMax() {
+    fun adListConsistent_onComplete_oneLoadedOneFailedByTMax() {
 
         val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).tmax(300).build()
         val secondAdElement: AdElement = AdElementBuilder().successful(true).delay(500).tmax(300).build()
-        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
@@ -142,17 +204,122 @@ class Tests {
             })
         }
     }
+
+    @Test
+    fun adListConcurrent_onComplete_oneLoadedOneFailedByTMax() {
+
+        val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).tmax(300).build()
+        val secondAdElement: AdElement = AdElementBuilder().successful(true).delay(500).tmax(300).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).surveyType(SurveyType.CONCURRENTLY).tmax(2000).build()
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertEquals(listOf(firstAdElement), loaded)
+                    assertEquals(listOf(secondAdElement), failed)
+                }
+            })
+        }
+    }
+
+    @Test
+    fun adListConsistent_onComplete_oneLoadedAndStop() {
+
+        val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).tmax(300).id("first").build()
+        val secondAdElement: AdElement = AdElementBuilder().successful(true).delay(200).tmax(300).id("second").build()
+        val adElement: AdElement = AdElementBuilder()
+                .addAdElement(firstAdElement)
+                .addAdElement(secondAdElement)
+                .surveyType(SurveyType.CONSISTENTLY)
+                .tmax(2000)
+                .stopGroupIfLoaded()
+                .build()
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertEquals(listOf(firstAdElement), loaded)
+                    assertTrue(failed.isEmpty())
+                }
+            })
+        }
+    }
+
+    @Test
+    fun adListConcurrent_onComplete_oneLoadedAndStop() {
+
+        val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(100).tmax(300).id("first").build()
+        val secondAdElement: AdElement = AdElementBuilder().successful(true).delay(200).tmax(300).id("second").build()
+        val adElement: AdElement = AdElementBuilder()
+                .addAdElement(firstAdElement)
+                .addAdElement(secondAdElement)
+                .surveyType(SurveyType.CONCURRENTLY)
+                .tmax(2000)
+                .stopGroupIfLoaded()
+                .build()
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertEquals(1, loaded.size)
+                    assertTrue(failed.isEmpty())
+                }
+            })
+        }
+    }
+
+    @Test
+    fun adListConsistent_onComplete_stopByTMax() {
+
+        val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).tmax(300).id("first").build()
+        val secondAdElement: AdElement = AdElementBuilder().successful(true).delay(200).tmax(300).id("second").build()
+        val adElement: AdElement = AdElementBuilder()
+                .addAdElement(firstAdElement)
+                .addAdElement(secondAdElement)
+                .surveyType(SurveyType.CONSISTENTLY)
+                .tmax(300)
+                .build()
+
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertEquals(listOf(firstAdElement), loaded)
+                    assertTrue(failed.isEmpty())
+                }
+            })
+        }
+    }
+
+    @Test
+    fun adListConcurrent_onComplete_stopByTMax() {
+
+        val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(100).tmax(500).id("first").build()
+        val secondAdElement: AdElement = AdElementBuilder().successful(true).delay(300).tmax(500).id("second").build()
+        val adElement: AdElement = AdElementBuilder()
+                .addAdElement(firstAdElement)
+                .addAdElement(secondAdElement)
+                .surveyType(SurveyType.CONCURRENTLY)
+                .tmax(200)
+                .build()
+
+        runBlocking {
+            adElement.load(object : LoadingListener {
+                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                    assertEquals(listOf(firstAdElement), loaded)
+                    assertTrue(failed.isEmpty())
+                }
+            })
+        }
+    }
+
 
     @Test
     fun adList_withInnerList_onComplete_consistently() {
 
         val innerFirstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
         val innerSecondAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
-        val innerAdElement: AdElement = AdElementBuilder().addAdElement(innerFirstAdElement).addAdElement(innerSecondAdElement).surveyType(SurveyType.CONSISTENTLY).build()
+        val innerAdElement: AdElement = AdElementBuilder().addAdElement(innerFirstAdElement).addAdElement(innerSecondAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
 
         val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
         val secondAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
-        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).addAdElement(innerAdElement).surveyType(SurveyType.CONSISTENTLY).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).addAdElement(innerAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
@@ -168,11 +335,11 @@ class Tests {
 
         val innerFirstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
         val innerSecondAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
-        val innerAdElement: AdElement = AdElementBuilder().addAdElement(innerFirstAdElement).addAdElement(innerSecondAdElement).surveyType(SurveyType.CONCURRENTLY).build()
+        val innerAdElement: AdElement = AdElementBuilder().addAdElement(innerFirstAdElement).addAdElement(innerSecondAdElement).surveyType(SurveyType.CONCURRENTLY).tmax(2000).build()
 
         val firstAdElement: AdElement = AdElementBuilder().successful(true).delay(200).build()
         val secondAdElement: AdElement = AdElementBuilder().successful(false).delay(200).build()
-        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).addAdElement(innerAdElement).surveyType(SurveyType.CONCURRENTLY).build()
+        val adElement: AdElement = AdElementBuilder().addAdElement(firstAdElement).addAdElement(secondAdElement).addAdElement(innerAdElement).surveyType(SurveyType.CONCURRENTLY).tmax(2000).build()
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
@@ -206,12 +373,12 @@ class Tests {
     @Test
     fun adElementBuilder_AdListConsistent() {
         val innerAdElement = AdElementBuilder().id("id_inner").delay(300).successful(true).build()
-        val adElement = AdElementBuilder().id("id").surveyType(SurveyType.CONSISTENTLY).delay(500).addAdElement(innerAdElement).build()
+        val adElement = AdElementBuilder().id("id").surveyType(SurveyType.CONSISTENTLY).tmax(2000).addAdElement(innerAdElement).build()
 
         assert(adElement is AdListConsistent)
         adElement as AdListConsistent
         assertEquals("id", adElement.id)
-        assertEquals(500, adElement.tmax)
+        assertEquals(2000, adElement.tmax)
         assertEquals(1, adElement.adElements.size)
         assertEquals(innerAdElement, adElement.adElements[0])
     }
@@ -219,12 +386,12 @@ class Tests {
     @Test
     fun adElementBuilder_AdListConcurrent() {
         val innerAdElement = AdElementBuilder().id("id_inner").delay(300).successful(true).build()
-        val adElement = AdElementBuilder().id("id").surveyType(SurveyType.CONCURRENTLY).delay(500).addAdElement(innerAdElement).build()
+        val adElement = AdElementBuilder().id("id").surveyType(SurveyType.CONCURRENTLY).tmax(2000).addAdElement(innerAdElement).build()
 
         assert(adElement is AdListConcurrent)
         adElement as AdListConcurrent
         assertEquals("id", adElement.id)
-        assertEquals(500, adElement.tmax)
+        assertEquals(2000, adElement.tmax)
         assertEquals(1, adElement.adElements.size)
         assertEquals(innerAdElement, adElement.adElements[0])
     }

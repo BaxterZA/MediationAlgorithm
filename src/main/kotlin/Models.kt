@@ -33,7 +33,7 @@ data class AdUnit(val successful: Boolean, val tmax: Int, val delay: Int, val id
 }
 
 
-class AdListConsistent(val adElements: List<AdElement>, val tmax: Int = 20000, val id: String = "", val stopGroupIfLoaded: Boolean) : AdElement {
+class AdList(val surveyType: SurveyType, val adElements: List<AdElement>, val tmax: Int = 200, val id: String = "", val stopGroupIfLoaded: Boolean) : AdElement {
     private val loadedAd: MutableList<AdElement> = mutableListOf()
     private val failedAd: MutableList<AdElement> = mutableListOf()
 
@@ -42,68 +42,62 @@ class AdListConsistent(val adElements: List<AdElement>, val tmax: Int = 20000, v
         runBlocking {
             try {
                 withTimeout(tmax.toLong()) {
-                    val deferredCalculations = async {
-                        adElements.map {
-                            it.load(object : LoadingListener {
-                                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
-                                    loadedAd.addAll(loaded)
-                                    failedAd.addAll(failed)
-
-                                    if (stopGroupIfLoaded && loaded.isNotEmpty()) {
-                                        throw CancellationException("Should stop loading ${this@AdListConsistent} after element was loaded")
-                                    }
-                                }
-                            })
-                        }
+                    when (surveyType) {
+                        SurveyType.CONCURRENTLY -> loadConcurrently()
+                        SurveyType.CONSISTENTLY -> loadConsistently()
                     }
-
-                    deferredCalculations.await()
                 }
             } catch (ce: CancellationException) {
                 println(ce.message)
             } finally {
-                println("Finish ${this@AdListConsistent}, loaded: $loadedAd, failed: $failedAd")
+                println("Finish ${this@AdList}, loaded: $loadedAd, failed: $failedAd")
                 listener.onComplete(loadedAd, failedAd)
             }
         }
     }
-}
 
-class AdListConcurrent(val adElements: List<AdElement>, val tmax: Int = 200, val id: String = "", val stopGroupIfLoaded: Boolean) : AdElement {
-    private val loadedAd: MutableList<AdElement> = mutableListOf()
-    private val failedAd: MutableList<AdElement> = mutableListOf()
+    private suspend fun loadConsistently() {
+        val deferredCalculations = async {
+            adElements.map {
+                it.load(object : LoadingListener {
+                    override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                        loadedAd.addAll(loaded)
+                        failedAd.addAll(failed)
 
-    override suspend fun load(listener: LoadingListener) {
-        println("Start $this")
-        runBlocking {
-            try {
-                withTimeout(tmax.toLong()) {
-                    val deferredCalculations = adElements.map {
-                        async {
-                            it.load(object : LoadingListener {
-                                override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
-                                    loadedAd.addAll(loaded)
-                                    failedAd.addAll(failed)
-
-                                    if (stopGroupIfLoaded && loaded.isNotEmpty()) {
-                                        throw CancellationException("Should stop loading ${this@AdListConcurrent} after element was loaded")
-                                    }
-                                }
-                            })
+                        if (stopGroupIfLoaded && loaded.isNotEmpty()) {
+                            throw CancellationException("Should stop loading ${this@AdList} after element was loaded")
                         }
                     }
-
-                    deferredCalculations.forEach { it.await() }
-                }
-            } catch (ce: CancellationException) {
-                println(ce.message)
-            } finally {
-                println("Finish ${this@AdListConcurrent}, loaded: $loadedAd, failed: $failedAd")
-                listener.onComplete(loadedAd, failedAd)
+                })
             }
         }
+
+        deferredCalculations.await()
+    }
+
+    private suspend fun loadConcurrently() {
+        val deferredCalculations = adElements.map {
+            async {
+                it.load(object : LoadingListener {
+                    override fun onComplete(loaded: List<AdElement>, failed: List<AdElement>) {
+                        loadedAd.addAll(loaded)
+                        failedAd.addAll(failed)
+
+                        if (stopGroupIfLoaded && loaded.isNotEmpty()) {
+                            throw CancellationException("Should stop loading ${this@AdList} after element was loaded")
+                        }
+                    }
+                })
+            }
+        }
+        deferredCalculations.forEach { it.await() }
+    }
+
+    override fun toString(): String {
+        return "AdListConsistent(surveyType=$surveyType, adElements=$adElements, tmax=$tmax, id='$id', stopGroupIfLoaded=$stopGroupIfLoaded)"
     }
 }
+
 
 enum class SurveyType {
     CONSISTENTLY, CONCURRENTLY
@@ -127,10 +121,7 @@ class AdElementBuilder {
     fun stopGroupIfLoaded() = apply { this.stopGroupIfLoaded = true }
 
     fun build(): AdElement = if (adElements.isNotEmpty()) {
-        when (surveyType) {
-            SurveyType.CONSISTENTLY -> AdListConsistent(adElements, tmax, id, stopGroupIfLoaded)
-            SurveyType.CONCURRENTLY -> AdListConcurrent(adElements, tmax, id, stopGroupIfLoaded)
-        }
+        AdList(surveyType, adElements, tmax, id, stopGroupIfLoaded)
     } else {
         AdUnit(successful, tmax, delay, id)
     }

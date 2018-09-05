@@ -373,26 +373,42 @@ class Tests {
     @Test
     fun adElementBuilder_AdListConsistent() {
         val innerAdElement = AdElementBuilder().id("id_inner").delay(300).successful(true).build()
-        val adElement = AdElementBuilder().id("id").surveyType(SurveyType.CONSISTENTLY).tmax(2000).addAdElement(innerAdElement).build()
+        val adElement = AdElementBuilder()
+                .id("id")
+                .surveyType(SurveyType.CONSISTENTLY)
+                .tmax(2000)
+                .addAdElement(innerAdElement)
+                .stopGroupIfLoaded()
+                .build()
 
-        assert(adElement is AdListConsistent)
-        adElement as AdListConsistent
+        assert(adElement is AdList)
+        adElement as AdList
+        assertEquals(SurveyType.CONSISTENTLY, adElement.surveyType)
         assertEquals("id", adElement.id)
         assertEquals(2000, adElement.tmax)
         assertEquals(1, adElement.adElements.size)
         assertEquals(innerAdElement, adElement.adElements[0])
+        assertTrue(adElement.stopGroupIfLoaded)
     }
 
     @Test
     fun adElementBuilder_AdListConcurrent() {
         val innerAdElement = AdElementBuilder().id("id_inner").delay(300).successful(true).build()
-        val adElement = AdElementBuilder().id("id").surveyType(SurveyType.CONCURRENTLY).tmax(2000).addAdElement(innerAdElement).build()
+        val adElement = AdElementBuilder()
+                .id("id")
+                .surveyType(SurveyType.CONCURRENTLY)
+                .tmax(2000)
+                .addAdElement(innerAdElement)
+                .stopGroupIfLoaded()
+                .build()
 
-        assert(adElement is AdListConcurrent)
-        adElement as AdListConcurrent
+        assert(adElement is AdList)
+        adElement as AdList
+        assertEquals(SurveyType.CONCURRENTLY, adElement.surveyType)
         assertEquals("id", adElement.id)
         assertEquals(2000, adElement.tmax)
         assertEquals(1, adElement.adElements.size)
         assertEquals(innerAdElement, adElement.adElements[0])
+        assertTrue(adElement.stopGroupIfLoaded)
     }
 }

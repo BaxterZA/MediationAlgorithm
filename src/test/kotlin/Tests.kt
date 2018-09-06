@@ -639,14 +639,14 @@ class Tests {
 
         val countDownLatch = CountDownLatch(2)
 
-        val firstPreCacheAdElement: AdElement = AdElementBuilder().successful(false).id("firstPreCacheAdElement").delay(200).tmax(500).build()
-        val secondPreCacheAdElement: AdElement = AdElementBuilder().successful(true).id("secondPreCacheAdElement").delay(200).tmax(500).build()
+        val firstPreCacheAdElement: AdElement = AdElementBuilder().successful(false).id("precache_1").delay(200).tmax(500).build()
+        val secondPreCacheAdElement: AdElement = AdElementBuilder().successful(true).id("precache_2").delay(200).tmax(500).build()
         val preCache: AdElement = AdElementBuilder().addAdElement(firstPreCacheAdElement).addAdElement(secondPreCacheAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
 
-        val concurrentAdElement: AdElement = AdElementBuilder().successful(true).id("concurrentAdElement").delay(1000).tmax(5000).fireCallbackIfLoaded().build()
+        val concurrentAdElement: AdElement = AdElementBuilder().successful(true).id("appodealx_1").delay(1000).tmax(5000).fireCallbackIfLoaded().build()
 
-        val firstListAdElement: AdElement = AdElementBuilder().successful(false).id("firstListAdElement").delay(200).tmax(500).fireCallbackIfLoaded().build()
-        val secondListAdElement: AdElement = AdElementBuilder().successful(true).id("secondListAdElement").delay(200).tmax(500).fireCallbackIfLoaded().build()
+        val firstListAdElement: AdElement = AdElementBuilder().successful(false).id("ads_1").delay(200).tmax(500).fireCallbackIfLoaded().build()
+        val secondListAdElement: AdElement = AdElementBuilder().successful(true).id("ads_2").delay(200).tmax(500).fireCallbackIfLoaded().build()
         val list: AdElement = AdElementBuilder().addAdElement(firstListAdElement).addAdElement(secondListAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
         val mainAds: AdElement = AdElementBuilder().addAdElement(concurrentAdElement).addAdElement(list).surveyType(SurveyType.CONCURRENTLY).tmax(5000).build()
 
@@ -679,5 +679,61 @@ class Tests {
 
     }
 
+    @Test
+    fun adRequest_preCacheListWithSecondLoaded_waterfallWithTwoAsyncAndFourSync() {
+
+        val countDownLatch = CountDownLatch(2)
+
+        val firstPreCacheAdElement: AdElement = AdElementBuilder().successful(false).id("precache_1").delay(200).tmax(500).build()
+        val secondPreCacheAdElement: AdElement = AdElementBuilder().successful(true).id("precache_2").delay(200).tmax(500).build()
+        val preCache: AdElement = AdElementBuilder().addAdElement(firstPreCacheAdElement).addAdElement(secondPreCacheAdElement).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
+
+        val appodealx1: AdElement = AdElementBuilder().successful(true).id("appodealx_1").delay(1000).tmax(5000).fireCallbackIfLoaded().build()
+
+        val ads1: AdElement = AdElementBuilder().successful(false).id("ads_1").delay(200).tmax(500).fireCallbackIfLoaded().build()
+        val ads2: AdElement = AdElementBuilder().successful(false).id("ads_2").delay(200).tmax(500).fireCallbackIfLoaded().build()
+
+        val appodealx2: AdElement = AdElementBuilder().successful(true).id("appodealx_2").delay(1000).tmax(5000).fireCallbackIfLoaded().build()
+
+        val ads3: AdElement = AdElementBuilder().successful(false).id("ads_3").delay(200).tmax(500).fireCallbackIfLoaded().build()
+        val ads4: AdElement = AdElementBuilder().successful(true).id("ads_4").delay(200).tmax(500).fireCallbackIfLoaded().build()
+        val list2: AdElement = AdElementBuilder().addAdElement(ads3).addAdElement(ads4).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
+        val lineItem2: AdElement = AdElementBuilder().addAdElement(appodealx2).addAdElement(list2).surveyType(SurveyType.CONCURRENTLY).tmax(5000).build()
+
+        val lineItem1: AdElement = AdElementBuilder().addAdElement(ads1).addAdElement(ads2).addAdElement(lineItem2).surveyType(SurveyType.CONSISTENTLY).tmax(2000).build()
+
+        val mainAds: AdElement = AdElementBuilder().addAdElement(appodealx1).addAdElement(lineItem1).surveyType(SurveyType.CONCURRENTLY).tmax(5000).build()
+
+        val ads: AdElement = AdElementBuilder().addAdElement(preCache).addAdElement(mainAds).surveyType(SurveyType.CONSISTENTLY).tmax(5000).build()
+
+        val adRequest = AdRequest(ads)
+        adRequest.load(object : AdRequestLoadingListener {
+            override fun onLoaded(adUnit: AdUnit) {
+                if (ads4 == adUnit) {
+                    countDownLatch.countDown()
+                } else {
+                    fail()
+                }
+            }
+
+            override fun onCompleted(loaded: List<AdUnit>, failed: List<AdUnit>) {
+                assertEquals(4, loaded.size)
+                assertTrue(loaded.contains(secondPreCacheAdElement))
+                assertTrue(loaded.contains(ads4))
+                assertTrue(loaded.contains(appodealx1))
+                assertTrue(loaded.contains(appodealx2))
+
+                assertEquals(4, failed.size)
+                assertTrue(failed.contains(firstPreCacheAdElement))
+                assertTrue(failed.contains(ads1))
+                assertTrue(failed.contains(ads2))
+                assertTrue(failed.contains(ads3))
+                countDownLatch.countDown()
+            }
+        })
+
+        assertTrue(countDownLatch.await(2000, TimeUnit.MILLISECONDS))
+
+    }
 
 }

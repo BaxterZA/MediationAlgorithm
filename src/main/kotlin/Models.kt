@@ -136,9 +136,9 @@ class AdElementBuilder {
     private var successful: Boolean = false
     private var adElements: MutableList<AdElement> = mutableListOf()
 
-    private var surveyType: SurveyType = SurveyType.CONSISTENTLY
-    private var stopGroupIfLoaded: Boolean = false
-    private var fireCallbackIfLoaded: Boolean = false
+    private var surveyType: SurveyType = SurveyType.CONSISTENTLY    // GROUP
+    private var stopGroupIfLoaded: Boolean = false                  // UNIT
+    private var fireCallbackIfLoaded: Boolean = false               // UNIT
 
     fun id(id: String) = apply { this.id = id }
     fun delay(delay: Int) = apply { this.delay = delay }

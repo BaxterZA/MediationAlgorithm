@@ -140,7 +140,7 @@ class Tests {
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(adUnit: AdUnit, successfully: Boolean) {
-                    if (successfully && (firstAdElement == adUnit && secondAdElement == adUnit)) {
+                    if (successfully && (firstAdElement == adUnit || secondAdElement == adUnit)) {
                         countDownLatch.countDown()
                     } else {
                         fail()
@@ -162,7 +162,7 @@ class Tests {
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(adUnit: AdUnit, successfully: Boolean) {
-                    if (successfully && (firstAdElement == adUnit && secondAdElement == adUnit)) {
+                    if (successfully && (firstAdElement == adUnit || secondAdElement == adUnit)) {
                         countDownLatch.countDown()
                     } else {
                         fail()
@@ -184,7 +184,7 @@ class Tests {
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(adUnit: AdUnit, successfully: Boolean) {
-                    if (!successfully && (firstAdElement == adUnit && secondAdElement == adUnit)) {
+                    if (!successfully && (firstAdElement == adUnit || secondAdElement == adUnit)) {
                         countDownLatch.countDown()
                     } else {
                         fail()
@@ -206,7 +206,7 @@ class Tests {
         runBlocking {
             adElement.load(object : LoadingListener {
                 override fun onComplete(adUnit: AdUnit, successfully: Boolean) {
-                    if (!successfully && (firstAdElement == adUnit && secondAdElement == adUnit)) {
+                    if (!successfully && (firstAdElement == adUnit || secondAdElement == adUnit)) {
                         countDownLatch.countDown()
                     } else {
                         fail()

@@ -9,6 +9,25 @@ import java.util.concurrent.TimeUnit
 
 class Tests {
 
+
+    @Test
+    fun adUnit_delay_time() {
+
+        val startTime = System.currentTimeMillis()
+        val delay = 1000
+        val startAdElement: AdElement = AdElementBuilder().successful(true).delay(delay).tmax(2000).build()
+        runBlocking {
+            startAdElement.load(object : LoadingListener {
+                override fun onComplete(adUnit: AdUnit, successfully: Boolean) {
+                    val finishTime = System.currentTimeMillis()
+                    val calculatedDelay = (finishTime - startTime).toInt()
+                    assertTrue(delay * 1.25 > calculatedDelay)
+                    assertTrue(delay * 0.75 < calculatedDelay)
+                }
+            })
+        }
+    }
+
     @Test
     fun adUnit_onComplete_withLoaded() {
 
